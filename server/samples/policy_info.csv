@@ -1,0 +1,6 @@
+patient_id,patient_name,policy_no,claim_limit,policy_start_date,policy_end_date,policy_active
+1,John Doe,PO12345,200000,2023-01-01,2024-01-01,True
+2,Jane Smith,PO67890,10000,2022-06-15,2023-06-15,True
+3,Bob Johnson,PO11223,7500,2021-03-10,2022-03-10,False
+4,Alice Brown,PO44556,6000,2023-04-20,2024-04-20,False
+5,Chris Green,PO78901,8500,2021-11-25,2022-11-25,True

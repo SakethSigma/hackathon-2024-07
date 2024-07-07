@@ -1,0 +1,15 @@
+###Example###
+Task: Extract the following information:
+    Patient Name
+    Policy Start and End Date
+    Policy Claim Limit
+    Policy Number
+
+StateDict:
+class AgentState(TypedDict):
+    bills: str  # base64 img
+    receipts: str  # base64 img
+    discharge_summary: str  # base64 img
+    lab_report: str  # base64 img
+    patient_id: str
+    insurer_name: str

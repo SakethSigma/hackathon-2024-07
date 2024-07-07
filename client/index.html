@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABC Insurance - Claim Form</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>ABC Insurance Claim Form</h1>
+        <form id="claimForm">
+            <label for="treatmentCategory">Treatment Category:</label>
+            <select id="treatmentCategory" name="treatmentCategory" onchange="handleCategoryChange()" required>
+                <option value="">Select a category</option>
+                <option value="hospitalisation">Hospitalisation</option>
+                <option value="prePostHospitalisation">Pre and Post Hospitalisation</option>
+                <option value="dayCareTreatments">Day Care Treatments</option>
+                <option value="opd">OPD</option>
+            </select>
+            
+            <div id="hospitalisationFields" class="hidden">
+                <label for="bills">Bills:</label>
+                <input type="file" id="bills" name="bills" multiple required>
+                
+                <label for="dischargeSummary">Discharge Summary:</label>
+                <input type="file" id="dischargeSummary" name="dischargeSummary" required>
+                
+                <label for="receipts">Payment Receipts:</label>
+                <input type="file" id="receipts" name="receipts" multiple required>
+            </div>
+
+            <button type="submit">Submit</button>
+        </form>
+
+        <div id="validationProgress" class="hidden">
+            <h2>AI Agents validating claim eligibility</h2>
+            <ul>
+                <li id="checkPatientNameDischargeSummary">Patient Name and Hospital Name present in discharge summary <span class="status"></span></li>
+                <li id="checkHospitalSeal">Hospital Seal present on discharge summary and bills <span class="status"></span></li>
+                <li id="checkInsurerName">Insurer’s Name written on all documents <span class="status"></span></li>
+                <li id="checkPatientSignature">Patient Name and Signature written on all documents <span class="status"></span></li>
+                <li id="checkClaimAmountPolicy">Total Claim amount less than policy allowed <span class="status"></span></li>
+            </ul>
+        </div>
+        <div id="resultSection" class="hidden">  
+            <h2>Claim Processing Result</h2>  
+            <pre id="apiResult"></pre>  
+        </div>  
+        <div id="errorSection" class="hidden">  
+            <h2>An error occurred</h2>  
+            <p id="apiError"></p>  
+        </div>  
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

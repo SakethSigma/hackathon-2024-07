@@ -1,0 +1,16 @@
+###Example###
+Task: Patient Name and Hospital Name should be present in discharge summary
+
+class AgentState(TypedDict):
+    bills: str  # base64 img
+    receipts: str  # base64 img
+    discharge_summary: str  # base64 img
+    lab_report: str  # base64 img
+    patient_id: str
+    insurer_name: str
+    patient_name: str
+    policy_start_date: str
+    policy_end_date: str
+    policy_no: str
+    claim_limit: str
+    policy_active: bool

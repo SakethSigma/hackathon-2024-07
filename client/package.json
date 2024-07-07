@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "fetch-mock": "^10.0.7",
+    "jest": "^29.7.0"
+  }
+}

@@ -1,0 +1,6 @@
+/client/node_modules/*
+*.env
+server/__pycache__
+server/main.ipynb
+server/agents.ipynb
+server/config.json
