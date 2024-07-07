@@ -53,7 +53,7 @@ document.getElementById('claimForm').addEventListener('submit', async function(e
     await validateDocument('checkInsurerName', resultOne["insurer_name_on_all_documents"]);
     await validateDocument('checkPatientSignature', resultOne["patient_name_signature_on_all_documents"]);
     await validateDocument('checkClaimAmountPolicy', resultOne["total_claim_amount_within_policy_limit"]);
-
+    console.log(resultOne)
         // // Display the result in the UI  
         // const apiResultElement = document.getElementById('apiResult');  
         // apiResultElement.textContent = JSON.stringify(result, null, 2);  

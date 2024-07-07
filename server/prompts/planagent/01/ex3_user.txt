@@ -1,0 +1,19 @@
+###Example###
+Task: Hospital Seal present on discharge summary and bills
+
+class AgentState(TypedDict):
+    bills: str  # base64 img
+    receipts: str  # base64 img
+    discharge_summary: str  # base64 img
+    lab_report: str  # base64 img
+    patient_id: str
+    insurer_name: str
+    patient_name: str
+    hospital_name: str
+    policy_start_date: str
+    policy_end_date: str
+    policy_no: str
+    claim_limit: str
+    claimed_amount: str  
+    policy_active: bool
+    patient_name_hospital_name_present: bool

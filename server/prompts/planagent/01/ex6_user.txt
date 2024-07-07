@@ -1,0 +1,7 @@
+###Example###
+Task: Total Claim amount less than policy allowed
+
+class AgentState(TypedDict):
+    patient_id: str
+    claim_limit: str
+    claimed_amount: str 

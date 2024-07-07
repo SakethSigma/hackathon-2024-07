@@ -2,6 +2,10 @@ import os
 import re
 import json
 
+def get_absolute_path(path):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), path))
+
+
 class PromptConstructor():
     def __init__(self):
         self.messages = []

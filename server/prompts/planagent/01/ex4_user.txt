@@ -1,0 +1,11 @@
+###Example###
+Task: Insurer’s Name written on all documents
+
+class AgentState(TypedDict):
+    bills: str  # base64 img
+    receipts: str  # base64 img
+    discharge_summary: str  # base64 img
+    lab_report: str  # base64 img
+    patient_id: str
+    insurer_name: str
+    policy_active: bool

@@ -29,40 +29,30 @@ class AgentState(TypedDict):
 
 def extraction_tasks(result):
     builder = StateGraph(AgentState)
-    """
-    I need to extract the following details:
-        Patient Name: db_sql_node
-        Policy Start Date: db_sql_node
-        Policy End Date: db_sql_node
-        Policy Claim Limit: db_sql_node
-        Policy Number: db_sql_node
 
-    I can perform them sequentially using the StateGraph
-    """
-
-    name_db_lookup = functools.partial(db_sql_node, information_required="patient_name", details=f"patient_id {state.get('patient_id')}")
-    policy_start_db_lookup = functools.partial(db_sql_node, information_required="policy_start_date", details=f"patient_id {state.get('patient_id')}")
-    policy_end_db_lookup = functools.partial(db_sql_node, information_required="policy_end_date", details=f"patient_id {state.get('patient_id')}")
-    policy_no_db_lookup = functools.partial(db_sql_node, information_required="policy_no", details=f"patient_id {state.get('patient_id')}")
-    claim_limit_db_lookup = functools.partial(db_sql_node, information_required="claim_limit", details=f"patient_id {state.get('patient_id')}")
-    policy_active_db_lookup = functools.partial(db_sql_node, information_required="policy_active", details=f"patient_id {state.get('patient_id')}")
+    name_db_lookup = functools.partial(db_sql_node, information_required="patient_name", details="patient_id 1")
+    policy_start_db_lookup = functools.partial(db_sql_node, information_required="policy_start_date", details="patient_id 1")
+    policy_end_db_lookup = functools.partial(db_sql_node, information_required="policy_end_date", details="patient_id 1")
+    policy_no_db_lookup = functools.partial(db_sql_node, information_required="policy_no", details="patient_id 1")
+    claim_limit_db_lookup = functools.partial(db_sql_node, information_required="claim_limit", details="patient_id 1")
+    policy_active_db_lookup = functools.partial(db_sql_node, information_required="policy_active", details="patient_id 1")
 
 
-    builder.add_node("name_db_lookup", name_db_lookup)
-    builder.add_node("policy_start_db_lookup", policy_start_db_lookup)
-    builder.add_node("policy_end_db_lookup", policy_end_db_lookup)
-    builder.add_node("policy_no_db_lookup", policy_no_db_lookup)
-    builder.add_node("claim_limit_db_lookup", claim_limit_db_lookup)
-    builder.add_node("policy_active_db_lookup", policy_active_db_lookup)
+    builder.add_node("name_db_lookup: db_sql_node", name_db_lookup)
+    builder.add_node("policy_start_db_lookup: db_sql_node", policy_start_db_lookup)
+    builder.add_node("policy_end_db_lookup: db_sql_node", policy_end_db_lookup)
+    builder.add_node("policy_no_db_lookup: db_sql_node", policy_no_db_lookup)
+    builder.add_node("claim_limit_db_lookup: db_sql_node", claim_limit_db_lookup)
+    builder.add_node("policy_active_db_lookup: db_sql_node", policy_active_db_lookup)
 
-    builder.add_edge("name_db_lookup", "policy_start_db_lookup")
-    builder.add_edge("policy_start_db_lookup", "policy_end_db_lookup")
+    builder.add_edge("name_db_lookup: db_sql_node", "policy_start_db_lookup: db_sql_node")
+    builder.add_edge("policy_start_db_lookup: db_sql_node", "policy_end_db_lookup: db_sql_node")
 
-    builder.add_edge("policy_end_db_lookup", "policy_no_db_lookup")
-    builder.add_edge("policy_no_db_lookup", "claim_limit_db_lookup")
-    builder.add_edge("claim_limit_db_lookup", "policy_active_db_lookup")
-    builder.add_edge("policy_active_db_lookup", END)
-    builder.set_entry_point("name_db_lookup")
+    builder.add_edge("policy_end_db_lookup: db_sql_node", "policy_no_db_lookup: db_sql_node")
+    builder.add_edge("policy_no_db_lookup: db_sql_node", "claim_limit_db_lookup: db_sql_node")
+    builder.add_edge("claim_limit_db_lookup: db_sql_node", "policy_active_db_lookup: db_sql_node")
+    builder.add_edge("policy_active_db_lookup: db_sql_node", END)
+    builder.set_entry_point("name_db_lookup: db_sql_node")
     graph = builder.compile()
     graph.get_graph().draw_png("samples/step.png")
     result = graph.invoke(result)

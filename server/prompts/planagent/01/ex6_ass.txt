@@ -1,0 +1,48 @@
+###thought
+"""
+Lets think step by step... I need to verify whether patient's name and signature hand-written on all documents:
+    Steps I will take:
+        a. Verify patients name hand-written and signature in discharge_summary, payment_receipt, bill_summary: validate_info_node
+    I can perform them sequentially it the StateGraph
+"""
+
+###python
+class AgentState(TypedDict):
+    patient_id: str
+    claim_limit: str
+    claimed_amount: str
+    total_claim_amount_within_policy_limit: bool
+
+def verify_claimed_amount_less_than_limit(result):
+    builder = StateGraph(AgentState)
+    info = "Total Claimed Amount"
+    json_format = """
+    [
+        {
+            "claimed_amount": int
+        }
+    ]
+    """
+    claimed_amount_docs = functools.partial(info_extract_node, 
+                                        image_data=result.get("bills"), 
+                                        info=info, 
+                                        json_format=json_format)
+
+    claimed_amount_in_limit = functools.partial(compare_keys_node,
+                                                key_1 = "claimed_amount",
+                                                condition = "equals",
+                                                key_2 = "claim_limit",
+                                                condition_name = "total_claim_amount_within_policy_limit")
+    builder.add_node("claimed_amount_docs: info_extract_node", claimed_amount_docs)
+    builder.add_node("claimed_amount_in_limit: compare_keys_node", claimed_amount_in_limit)
+
+    builder.add_edge("claimed_amount_docs: info_extract_node", "claimed_amount_in_limit: compare_keys_node")
+    builder.add_edge("claimed_amount_in_limit: compare_keys_node", END)
+
+
+    builder.set_entry_point("claimed_amount_docs: info_extract_node")
+    graph = builder.compile()
+    graph.get_graph().draw_png("samples/step.png")
+    result = graph.invoke(result)
+
+    return result

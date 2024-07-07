@@ -1,10 +1,10 @@
 ###thought
 """
-Lets think step by step... I need to verify whether patient_name and hospital_name are present in discharge_summary:
-Steps I will take:
-    a. Verify patient_name, hospital_name in discharge_summary: validate_info_node
-    b. Extract hospital_name from discharge_summary: info_extract_node
-I can perform them sequentially using the StateGraph
+Lets think step by step...I need to verify whether patient_name and hospital_name are present in discharge_summary:
+    Steps I will take:
+        a. Verify patient_name, hospital_name in discharge_summary: validate_info_node
+        b. Extract hospital_name from discharge_summary: info_extract_node
+    I can perform them sequentially using the StateGraph
 """
 
 ###python
@@ -24,45 +24,33 @@ class AgentState(TypedDict):
     patient_name_hospital_name_present: bool    
     hospital_name: str
 
-def extraction_tasks(result):
+def verify_discharge_summary_details(result):
+
     builder = StateGraph(AgentState)
+    verify_details_in_discharge_summary = functools.partial(validate_info_node, 
+                                                            image_data=result.get("discharge_summary"), 
+                                                            keys_to_validate=["patient_name","hospital_name"], 
+                                                            condition_name = "patient_name_hospital_name_present")
+
+    info = "Name of the hospital"
+    json_format = """
+    [
+        {
+            "hospital_name": str
+        }
+    ]
     """
-    I need to extract the following details:
-        Patient Name: db_sql_node
-        Policy Start Date: db_sql_node
-        Policy End Date: db_sql_node
-        Policy Claim Limit: db_sql_node
-        Policy Number: db_sql_node
+    hospital_name_in_discharge_summary = functools.partial(info_extract_node, image_data=result.get("discharge_summary"), info = info, json_format=json_format)
+    builder.add_node("verify_details_in_discharge_summary: validate_info_node", verify_details_in_discharge_summary)
+    builder.add_node("hospital_name_in_discharge_summary: info_extract_node", hospital_name_in_discharge_summary)
+    builder.add_edge("verify_details_in_discharge_summary: validate_info_node", "hospital_name_in_discharge_summary: info_extract_node")
+    builder.add_edge("hospital_name_in_discharge_summary: info_extract_node", END)
 
-    I can perform them sequentially using the StateGraph
-    """
-
-    name_db_lookup = functools.partial(db_sql_node, information_required="patient_name", details=f"patient_id {state.get('patient_id')}")
-    policy_start_db_lookup = functools.partial(db_sql_node, information_required="policy_start_date", details=f"patient_id {state.get('patient_id')}")
-    policy_end_db_lookup = functools.partial(db_sql_node, information_required="policy_end_date", details=f"patient_id {state.get('patient_id')}")
-    policy_no_db_lookup = functools.partial(db_sql_node, information_required="policy_no", details=f"patient_id {state.get('patient_id')}")
-    claim_limit_db_lookup = functools.partial(db_sql_node, information_required="claim_limit", details=f"patient_id {state.get('patient_id')}")
-    policy_active_db_lookup = functools.partial(db_sql_node, information_required="policy_active", details=f"patient_id {state.get('patient_id')}")
-
-
-    builder.add_node("name_db_lookup", name_db_lookup)
-    builder.add_node("policy_start_db_lookup", policy_start_db_lookup)
-    builder.add_node("policy_end_db_lookup", policy_end_db_lookup)
-    builder.add_node("policy_no_db_lookup", policy_no_db_lookup)
-    builder.add_node("claim_limit_db_lookup", claim_limit_db_lookup)
-    builder.add_node("policy_active_db_lookup", policy_active_db_lookup)
-
-    builder.add_edge("name_db_lookup", "policy_start_db_lookup")
-    builder.add_edge("policy_start_db_lookup", "policy_end_db_lookup")
-
-    builder.add_edge("policy_end_db_lookup", "policy_no_db_lookup")
-    builder.add_edge("policy_no_db_lookup", "claim_limit_db_lookup")
-    builder.add_edge("claim_limit_db_lookup", "policy_active_db_lookup")
-    builder.add_edge("policy_active_db_lookup", END)
-    builder.set_entry_point("name_db_lookup")
+    builder.set_entry_point("verify_details_in_discharge_summary: validate_info_node")
     graph = builder.compile()
     graph.get_graph().draw_png("samples/step.png")
     result = graph.invoke(result)
+
     return result
 
 

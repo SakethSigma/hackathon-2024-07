@@ -1,0 +1,37 @@
+###thought
+"""
+Lets think step by step... I need to verify whether insurer's name hand-written on all documents:
+    Steps I will take:
+        a. Verify insurer name handwritten in discharge_summary, payment_receipt, bill_summary: validate_info_node
+    I can perform them sequentially it the StateGraph
+"""
+
+###python
+class AgentState(TypedDict):
+    bills: str  # base64 img
+    receipts: str  # base64 img
+    discharge_summary: str  # base64 img
+    lab_report: str  # base64 img
+    patient_id: str
+    insurer_name: str
+    insurer_name_on_all_docs: bool
+
+def verify_insurer_name_on_docs(result):
+
+    builder = StateGraph(AgentState)
+    insurer_name_sign_on_docs = functools.partial(validate_info_node, 
+                                                            image_data=[result.get("discharge_summary"), result.get("bills"), result.get("receipts")], 
+                                                            keys_to_validate=["insurer_name_written_on_docs"], 
+                                                            condition_name = "insurer_name_on_all_docs")
+
+    builder.add_node("insurer_name_on_docs: validate_info_node", insurer_name_sign_on_docs)
+    builder.add_edge("insurer_name_on_docs: validate_info_node", END)
+
+    builder.set_entry_point("insurer_name_on_docs: validate_info_node")
+    graph = builder.compile()
+    graph.get_graph().draw_png("samples/step.png")
+    result = graph.invoke(result)
+
+    return result
+
+

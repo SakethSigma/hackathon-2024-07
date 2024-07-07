@@ -1,0 +1,47 @@
+###thought
+"""
+Lets think step by step... I need to verify whether Hospital Seal is present in discharge_summary and bills:
+    Step I will take:
+        a. Verify hospital_seal in discharge_summary and bills: validate_info_node
+    I can perform it using the StateGraph
+"""
+
+###python
+class AgentState(TypedDict):
+    bills: str  # base64 img
+    receipts: str  # base64 img
+    discharge_summary: str  # base64 img
+    lab_report: str  # base64 img
+    patient_id: str
+    insurer_name: str
+    patient_name: str
+    hospital_name: str
+    policy_start_date: str
+    policy_end_date: str
+    policy_no: str
+    claim_limit: str
+    claimed_amount: str  
+    policy_active: bool
+    patient_name_hospital_name_present: bool
+    hospital_seal_on_discharge_summary_bills: bool
+
+def verify_seal_in_discharge_summary_and_bills(result):
+
+    builder = StateGraph(AgentState)
+    verify_seal_in_discharge_summary_bills = functools.partial(validate_info_node, 
+                                                            image_data=[result.get("discharge_summary"), result.get("bills")], 
+                                                            keys_to_validate=["hospital_seal"], 
+                                                            condition_name = "hospital_seal_on_discharge_summary_bills")
+
+
+    builder.add_node("verify_seal_in_discharge_summary_bills: validate_info_node", verify_seal_in_discharge_summary_bills)
+    builder.add_edge("verify_seal_in_discharge_summary_bills: validate_info_node", END)
+
+    builder.set_entry_point("verify_seal_in_discharge_summary_bills: validate_info_node")
+    graph = builder.compile()
+    graph.get_graph().draw_png("samples/step.png")
+    result = graph.invoke(result)
+
+    return result
+
+

@@ -2,6 +2,13 @@ from typing import TypedDict
 from agents import *
 import functools
 from langgraph.graph import StateGraph, END
+from PIL import Image, ImageTk
+import tkinter as tk
+import sys
+import subprocess
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
 
 
 class AgentState(TypedDict):
@@ -20,9 +27,9 @@ class AgentState(TypedDict):
     claimed_amount: str  
     policy_active: bool
     patient_name_hospital_name_present: bool
+    hospital_seal_on_discharge_summary_bills: bool
     insurer_name_on_all_docs: bool
     patient_name_signature_on_all_documents: bool
-    hospital_seal_on_discharge_summary_bills: bool
     total_claim_amount_within_policy_limit: bool
 
 def perform_checks(result):
@@ -59,23 +66,24 @@ def extraction_tasks(result):
     policy_active_db_lookup = functools.partial(db_sql_node, information_required="policy_active", details="patient_id 1")
 
 
-    builder.add_node("name_db_lookup", name_db_lookup)
-    builder.add_node("policy_start_db_lookup", policy_start_db_lookup)
-    builder.add_node("policy_end_db_lookup", policy_end_db_lookup)
-    builder.add_node("policy_no_db_lookup", policy_no_db_lookup)
-    builder.add_node("claim_limit_db_lookup", claim_limit_db_lookup)
-    builder.add_node("policy_active_db_lookup", policy_active_db_lookup)
+    builder.add_node("name_db_lookup: db_sql_node", name_db_lookup)
+    builder.add_node("policy_start_db_lookup: db_sql_node", policy_start_db_lookup)
+    builder.add_node("policy_end_db_lookup: db_sql_node", policy_end_db_lookup)
+    builder.add_node("policy_no_db_lookup: db_sql_node", policy_no_db_lookup)
+    builder.add_node("claim_limit_db_lookup: db_sql_node", claim_limit_db_lookup)
+    builder.add_node("policy_active_db_lookup: db_sql_node", policy_active_db_lookup)
 
-    builder.add_edge("name_db_lookup", "policy_start_db_lookup")
-    builder.add_edge("policy_start_db_lookup", "policy_end_db_lookup")
+    builder.add_edge("name_db_lookup: db_sql_node", "policy_start_db_lookup: db_sql_node")
+    builder.add_edge("policy_start_db_lookup: db_sql_node", "policy_end_db_lookup: db_sql_node")
 
-    builder.add_edge("policy_end_db_lookup", "policy_no_db_lookup")
-    builder.add_edge("policy_no_db_lookup", "claim_limit_db_lookup")
-    builder.add_edge("claim_limit_db_lookup", "policy_active_db_lookup")
-    builder.add_edge("policy_active_db_lookup", END)
-    builder.set_entry_point("name_db_lookup")
+    builder.add_edge("policy_end_db_lookup: db_sql_node", "policy_no_db_lookup: db_sql_node")
+    builder.add_edge("policy_no_db_lookup: db_sql_node", "claim_limit_db_lookup: db_sql_node")
+    builder.add_edge("claim_limit_db_lookup: db_sql_node", "policy_active_db_lookup: db_sql_node")
+    builder.add_edge("policy_active_db_lookup: db_sql_node", END)
+    builder.set_entry_point("name_db_lookup: db_sql_node")
     graph = builder.compile()
     graph.get_graph().draw_png("samples/step_1.png")
+    display_image("samples/step_1.png")
     result = graph.invoke(result)
     return result
 
@@ -103,14 +111,15 @@ def verify_discharge_summary_details(result):
     ]
     """
     hospital_name_in_discharge_summary = functools.partial(info_extract_node, image_data=result.get("discharge_summary"), info = info, json_format=json_format)
-    builder.add_node("verify_details_in_discharge_summary", verify_details_in_discharge_summary)
-    builder.add_node("hospital_name_in_discharge_summary", hospital_name_in_discharge_summary)
-    builder.add_edge("verify_details_in_discharge_summary", "hospital_name_in_discharge_summary")
-    builder.add_edge("hospital_name_in_discharge_summary", END)
+    builder.add_node("verify_details_in_discharge_summary: validate_info_node", verify_details_in_discharge_summary)
+    builder.add_node("hospital_name_in_discharge_summary: info_extract_node", hospital_name_in_discharge_summary)
+    builder.add_edge("verify_details_in_discharge_summary: validate_info_node", "hospital_name_in_discharge_summary: info_extract_node")
+    builder.add_edge("hospital_name_in_discharge_summary: info_extract_node", END)
 
-    builder.set_entry_point("verify_details_in_discharge_summary")
+    builder.set_entry_point("verify_details_in_discharge_summary: validate_info_node")
     graph = builder.compile()
     graph.get_graph().draw_png("samples/step_2.png")
+    display_image("samples/step_2.png")
     result = graph.invoke(result)
 
     return result
@@ -129,15 +138,14 @@ def verify_seal_in_discharge_summary_and_bills(result):
                                                             keys_to_validate=["hospital_seal"], 
                                                             condition_name = "hospital_seal_on_discharge_summary_bills")
 
-    # print(type(result.get("discharge_summary")))
-    # print(type(result.get("bills")))
-    # print(type(result.get("receipts")))
-    builder.add_node("verify_seal_in_discharge_summary_bills", verify_seal_in_discharge_summary_bills)
-    builder.add_edge("verify_seal_in_discharge_summary_bills", END)
 
-    builder.set_entry_point("verify_seal_in_discharge_summary_bills")
+    builder.add_node("verify_seal_in_discharge_summary_bills: validate_info_node", verify_seal_in_discharge_summary_bills)
+    builder.add_edge("verify_seal_in_discharge_summary_bills: validate_info_node", END)
+
+    builder.set_entry_point("verify_seal_in_discharge_summary_bills: validate_info_node")
     graph = builder.compile()
     graph.get_graph().draw_png("samples/step_3.png")
+    display_image("samples/step_4.png")
     result = graph.invoke(result)
 
     return result
@@ -156,12 +164,13 @@ def verify_insurer_name_on_docs(result):
                                                             keys_to_validate=["insurer_name_written_on_docs"], 
                                                             condition_name = "insurer_name_on_all_docs")
 
-    builder.add_node("insurer_name_on_docs", insurer_name_sign_on_docs)
-    builder.add_edge("insurer_name_on_docs", END)
+    builder.add_node("insurer_name_on_docs: validate_info_node", insurer_name_sign_on_docs)
+    builder.add_edge("insurer_name_on_docs: validate_info_node", END)
 
-    builder.set_entry_point("insurer_name_on_docs")
+    builder.set_entry_point("insurer_name_on_docs: validate_info_node")
     graph = builder.compile()
     graph.get_graph().draw_png("samples/step_4.png")
+    display_image("samples/step_5.png")
     result = graph.invoke(result)
 
     return result
@@ -180,12 +189,13 @@ def verify_pname_and_sign_on_docs(result):
                                                             keys_to_validate=["patient_name_written_with_pen", "patient_signature"], 
                                                             condition_name = "patient_name_signature_on_all_documents")
 
-    builder.add_node("pname_sign_on_docs", pname_sign_on_docs)
-    builder.add_edge("pname_sign_on_docs", END)
+    builder.add_node("pname_sign_on_docs: validate_info_node", pname_sign_on_docs)
+    builder.add_edge("pname_sign_on_docs: validate_info_node", END)
 
-    builder.set_entry_point("pname_sign_on_docs")
+    builder.set_entry_point("pname_sign_on_docs: validate_info_node")
     graph = builder.compile()
     graph.get_graph().draw_png("samples/step_5.png")
+    display_image("samples/step_5.png")
     result = graph.invoke(result)
 
     return result
@@ -218,16 +228,27 @@ def verify_claimed_amount_less_than_limit(result):
                                                 condition = "equals",
                                                 key_2 = "claim_limit",
                                                 condition_name = "total_claim_amount_within_policy_limit")
-    builder.add_node("claimed_amount_docs", claimed_amount_docs)
-    builder.add_node("claimed_amount_in_limit", claimed_amount_in_limit)
+    builder.add_node("claimed_amount_docs: info_extract_node", claimed_amount_docs)
+    builder.add_node("claimed_amount_in_limit: compare_keys_node", claimed_amount_in_limit)
 
-    builder.add_edge("claimed_amount_docs", "claimed_amount_in_limit")
-    builder.add_edge("claimed_amount_in_limit", END)
+    builder.add_edge("claimed_amount_docs: info_extract_node", "claimed_amount_in_limit: compare_keys_node")
+    builder.add_edge("claimed_amount_in_limit: compare_keys_node", END)
 
 
-    builder.set_entry_point("claimed_amount_docs")
+    builder.set_entry_point("claimed_amount_docs: info_extract_node")
     graph = builder.compile()
-    graph.get_graph().draw_png("samples/step_5.png")
+    graph.get_graph().draw_png("samples/step_6.png")
+    display_image("samples/step_6.png")
     result = graph.invoke(result)
 
     return result
+
+
+def display_image(image_path):
+    # Open the image with the default viewer
+    if sys.platform == "darwin":  # macOS
+        subprocess.run(["open", image_path])
+    elif sys.platform == "win32":  # Windows
+        subprocess.run(["start", image_path], shell=True)
+    else:  # Linux and other systems
+        subprocess.run(["xdg-open", image_path])
